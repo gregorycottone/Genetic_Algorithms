@@ -9,14 +9,13 @@ teta1_min = -9;
 teta1_max = -1;
 teta2_min = 5;
 teta2_max = 15;
-teta_lbounds = [teta1_min, teta2_min]*pi*((180)^(-1));
+teta_lbounds = [teta1_min, teta2_min]*pi*((180)^(-1)); % Lower bounds of theta1 and theta2 and converted from degrees to radians
 teta_ubounds = [teta1_max, teta2_max]*pi*((180)^-1);
-theta1 = linspace(teta1_min, teta1_max, 20)*pi*((180)^-1);
+theta1 = linspace(teta1_min, teta1_max, 20)*pi*((180)^-1); % generates 20 linearly spaced points between teta1_min and teta1_max and converted from degrees to radians
 theta2 = linspace(teta2_min, teta2_max, 20)*pi*((180)^-1);
 
-
-DV = combvec(theta1, theta2);
-DV = DV';
+DV = combvec(theta1, theta2); % generate all combinations of elements from the vectors theta1 and theta2
+DV = DV'; % compute the matrix transpose of DV
 
 x0 = DV;
 
@@ -26,14 +25,14 @@ g = 0.050;      % [m]
 c = 0.870;      % [m]
 dz = 0.05;      % [m]
 
+% Target values that we want to reach
 target_f1 = 0.100;      % [m]
 target_f2 = 2*pi/180;   % [rad]
 
 
 
 %% Genetic Algorithm:
-
-par = 0.03;         % probability of mutation
+par = 0.03;  % probability of mutation
 bit = 8;
 
 niteration = 200;
@@ -118,7 +117,7 @@ title('Objective Functions Space')
 % Rank behaviour:
 figure
 bar(1:gen, NIR1/length(F), 'b')
-ylabel('N° of individuals with rank 1 over N° of total individuals')
+ylabel('Nï¿½ of individuals with rank 1 over Nï¿½ of total individuals')
 xlabel('Generations')
 grid on
 title('Rank behaviour')
@@ -196,7 +195,7 @@ while size(matr_sort(:,1)) > 0  % In this while loop, the matrix matr_sort decre
     end
     % Now the last column of matr_sort has many ones and zeros, the zeros
     % represent the Pareto optimal set
-    index = find(matr_sort(:,5) == 0); % Indeces of the Pareto optimal set. Note that here it find the index of all elements equal to zero in the last column of matr_sort
+    index = find(matr_sort(:,5) == 0); % Indexes of the Pareto optimal set. Note that here it finds the index of all elements equal to zero in the last column of matr_sort
 %
 %
 %% -----------------------------------------------
