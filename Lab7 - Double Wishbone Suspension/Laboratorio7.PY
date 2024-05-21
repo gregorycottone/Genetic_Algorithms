@@ -59,6 +59,8 @@ gen = 0
 # computation of the Pareto optimal set.
 def fitness(x, h1, h2, g, c, dz, target_f1, target_f2):  # Note that x is (n_points*n_points, 2) or we can also say (num_individuals, 2) 
     
+    
+    
     # ----------------------------------------------------
     # Initialization and Calculations for Each Individual
     # For each person/combination of the population, we 
@@ -99,6 +101,9 @@ def fitness(x, h1, h2, g, c, dz, target_f1, target_f2):  # Note that x is (n_poi
     
     
     
+    
+    
+    
     # ----------------------------------------------------
     # Combine and Sort
     # ----------------------------------------------------
@@ -107,12 +112,45 @@ def fitness(x, h1, h2, g, c, dz, target_f1, target_f2):  # Note that x is (n_poi
     # matrix, matr. In this matrix there are as many rows as the number of all individuals/persons/combinations, 
     # where the first column represent the first design variable (theta1), the second column represent theta2, 
     # the third column is obfun1, the fourth is obfun2 and the last column contains all zeros
-    matr = np.hstack((x, obfun1, obfun2, np.zeros((num_individuals, 1)))) # (num_individuals, 5) 
-    
-    
+    matr = np.hstack((x, obfun1, obfun2, np.zeros((num_individuals, 1)))) # (num_individuals, 5) The extra column of zeros will later hold the rank values.
+    # The resulting matr matrix has the following structure:
+    # [theta1, theta2, obfun1, obfun2, 0]
+    # [theta1, theta2, obfun1, obfun2, 0]
+    # ...
+
+
     # The matrix is sorted based on the first objective function (obfun1). This helps in the next 
     # step, where you evaluate non-dominance.
-    matr_sort = matr[matr[:, 2].argsort()]   # (num_individuals, 5)
+    matr_sort = matr[matr[:, 2].argsort()]  # (num_individuals, 5)
+    # argsort() returns the indices that would sort this array. For example, if obfun1 values were [0.5, 0.2, 0.9], argsort() 
+    # would return [1, 0, 2] because 0.2 (index 1) is the smallest, followed by 0.5 (index 0), and then 0.9 (index 2).
+    # Applying argsort() on matr[:, 2] gives us the indices that sort obfun1 in ascending order. Using these indices to index 
+    # matr (matr[matr[:, 2].argsort()]) sorts the entire matr matrix based on the obfun1 values. This sorted matrix, matr_sort, 
+    # is structured such that rows are ordered by increasing obfun1.
+    # Why Sorting by obfun1?
+    # Sorting the matrix by obfun1 is a preparatory step for the non-dominated sorting that follows. Here's why it's useful:
+    # 1) Easier Identification of Non-Dominated Individuals: Starting with the smallest obfun1 values simplifies the process 
+    # of finding non-dominated individuals. When you have the smallest obfun1 at the top, you can more easily check other 
+    # objective values (obfun2 in this case) to determine non-dominance.
+    # 2) Efficient Ranking: By sorting, you create a more structured approach to assigning ranks. You can start with the 
+    # best (lowest) values of obfun1 and then determine the rank based on obfun2.
+    # Assume you have three individuals with the following values:
+    # Individual   theta1	theta2	obfun1	obfun2
+    #    1	         0.3	 0.6	 0.9	 0.4
+    #    2	         0.1	 0.2	 0.2	 0.5
+    #    3	         0.5	 0.4	 0.5	 0.3
+    
+    # Matrix Before Sorting (matr):
+    # [[0.3, 0.6, 0.9, 0.4, 0],
+    #  [0.1, 0.2, 0.2, 0.5, 0],
+    #  [0.5, 0.4, 0.5, 0.3, 0]]
+    # As you can see the sequence of obfun1 is 0.9, 0.2, 0.5
+    
+    # Sorted Matrix (matr_sort) based on obfun1:
+    # [[0.1, 0.2, 0.2, 0.5, 0],
+    #  [0.5, 0.4, 0.5, 0.3, 0],
+    #  [0.3, 0.6, 0.9, 0.4, 0]]
+    # Now after the sorting, the sequence of obfun1 is 0.2, 0.5, 0.9
     
     # -------------------------------------------------------------------
     #  Fin of Combine and Sort - FIN
@@ -121,10 +159,14 @@ def fitness(x, h1, h2, g, c, dz, target_f1, target_f2):  # Note that x is (n_poi
     
     
     
+    
+    
     # ----------------------------------------------------
     # Non-Dominated Sorting
     # ----------------------------------------------------
     
+    # This block implements non-dominated sorting. An individual is considered non-dominated if no other individual in the 
+    # population is better in all objectives.
     matr_rank = []  # Pre allocate memory to the matr_rank matrix
     z = 0
     while matr_sort.shape[0] > 0:
@@ -138,6 +180,8 @@ def fitness(x, h1, h2, g, c, dz, target_f1, target_f2):  # Note that x is (n_poi
             if not dominated:
                 index.append(i)
 
+        # Sorting by Ranks: Individuals that are non-dominated get the lowest rank (best rank), and are then removed from the 
+        # sorting pool. This process repeats until all individuals are ranked.
         rank = np.full((len(index), 1), z + 1)
         matr_rank.append(np.hstack((matr_sort[index, :4], rank)))
         matr_sort = np.delete(matr_sort, index, axis=0)
@@ -149,10 +193,23 @@ def fitness(x, h1, h2, g, c, dz, target_f1, target_f2):  # Note that x is (n_poi
 
 
 
+
+
+    # -------------------------------------------------------------------
+    # Calculate Fitness
+    # -------------------------------------------------------------------
+    
+    # Final Fitness: Here, the fitness is inversely proportional to the rank. A lower rank (more non-dominance) results 
+    # in a higher fitness.
     if matr_rank:
         matr_rank = np.vstack(matr_rank)
 
     F = 1 / matr_rank[:, 4]  # Compute fitness as the inverse of the rank
+    
+    # -------------------------------------------------------------------
+    # Fin of Calculate Fitness - FIN
+    # -------------------------------------------------------------------
+    
     return F, matr_rank, obfun1.flatten(), obfun2.flatten()
 
 
